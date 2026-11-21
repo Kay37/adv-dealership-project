@@ -18,6 +18,7 @@ public class SalesContract extends Contract {
     private boolean isFinanced; //! the buyer chooses if this is true or false
     private BigDecimal processingFee = BigDecimal.ZERO;
     private BigDecimal salesTaxAmount = BigDecimal.ZERO;
+    private String financeOption;
 
     public SalesContract(String date, String customerName, String customerEmail, Vehicle vehicleSold, boolean isFinanced) {
         super(date, customerName, customerEmail, vehicleSold); //! parent constructor fills in what every type of contract has
@@ -51,6 +52,15 @@ public class SalesContract extends Contract {
 
     public BigDecimal getRecordingFee() {
         return RECORDING_FEE;
+    }
+
+    public String getFinanceOption() {
+        if (isFinanced) {
+            financeOption = "YES";
+        } else {
+            financeOption = "NO";
+        }
+        return financeOption;
     }
 
     public void setFinanced(boolean financed) {

@@ -153,6 +153,10 @@ public class UserInterface {
         }
     }
 
+    public void processSellLeaseRequest() {
+
+    }
+
     public void processGetByColorRequest() {
         String getByColorRequest = InputToolbox.promptString(
                 "Please enter the color of vehicle(s) you would like to search for: ");
