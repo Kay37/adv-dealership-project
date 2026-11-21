@@ -5,6 +5,8 @@ import java.math.BigDecimal;
 //! adds: ending value, lease fee
 public class LeaseContract extends Contract {
 
+
+
     public LeaseContract(String date, String customerName, String customerEmail, Vehicle vehicleSold) {
         super(date, customerName, customerEmail, vehicleSold);
     }
