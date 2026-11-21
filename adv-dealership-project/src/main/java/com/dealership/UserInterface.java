@@ -2,6 +2,8 @@ package com.dealership;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 
 //! UserInterface will be responsible for all output to the screen, reading of user input, and using the
@@ -53,7 +55,7 @@ public class UserInterface {
                 case 7 -> processGetAllVehiclesRequest();
                 case 8 -> processAddVehicleRequest();
                 case 9 -> processRemoveVehicleRequest();
-                case 10 -> System.out.println("Sorry! This is not a functioning option at this time.");
+                case 10 -> processSellLeaseRequest();
                 case 99 -> {
                     System.out.println("Thanks for using our application! Goodbye.");
                     appRunning = false;
@@ -62,6 +64,7 @@ public class UserInterface {
             }
         }
     }
+
     //! The init method creates a new DealershipFileManager object & provides that file manager with the dealership
     private void init() {
 
@@ -69,6 +72,7 @@ public class UserInterface {
         this.dealership = dealershipFileManager.getDealership();
 
     }
+
     //! Ask user for price range, convert it into BigDecimal, and displayVehicles method displays all vehicles
     //! from the dealership that match that price range
     public void processGetByPriceRequest() {
@@ -80,6 +84,7 @@ public class UserInterface {
         BigDecimal priceRequestMaxAsBigDecimal = new BigDecimal(getByPriceRequestMax);
         displayVehicles(dealership.getVehiclesByPrice(priceRequestMinAsBigDecimal, priceRequestMaxAsBigDecimal));
     }
+
     //! Pretty much the same logic as GetByPriceRequest
     public void processGetByMakeModelRequest() {
         String getByMakeRequest = InputToolbox.promptString(
@@ -88,6 +93,7 @@ public class UserInterface {
                 "Please enter the model you'd like to search for: ");
         displayVehicles(dealership.getVehiclesByMakeModel(getByMakeRequest, getByModelRequest));
     }
+
     //! Pretty much the same logic as GetByPriceRequest
     public void processGetByYearRangeRequest() {
         int getByYearRangeRequestStart = InputToolbox.promptInt(
@@ -96,6 +102,7 @@ public class UserInterface {
                 "Please enter the end of the year range: ", getByYearRangeRequestStart);
         displayVehicles(dealership.getVehiclesByYear(getByYearRangeRequestStart, getByYearRangeRequestEnd));
     }
+
     //! Pretty much the same logic as GetByPriceRequest
     public void processGetByMileageRequest() {
         int getByMileageRequestMin = InputToolbox.promptInt(
@@ -104,12 +111,14 @@ public class UserInterface {
                 "Please enter the maximum mileage of the mileage range: ", getByMileageRequestMin);
         displayVehicles(dealership.getVehiclesByMileage(getByMileageRequestMin, getByMileageRequestMax));
     }
+
     //! Pretty much the same logic as GetByPriceRequest
     public void processGetByVehicleTypeRequest() {
         String getByVehicleTypeRequest = InputToolbox.promptString(
                 "Please enter the vehicle type you'd like to search for (e.g. car, truck): ");
         displayVehicles(dealership.getVehiclesByType(getByVehicleTypeRequest));
     }
+
     //! Prompt the user for every field that a vehicle object needs.
     public void processAddVehicleRequest() {
         int vin = InputToolbox.promptInt("Please enter the new vehicle's VIN: ", 0, Integer.MAX_VALUE);
@@ -154,7 +163,45 @@ public class UserInterface {
     }
 
     public void processSellLeaseRequest() {
+        Contract newContract = null;
+        LocalDate now = LocalDate.now();
+        int vin = InputToolbox.promptInt(
+                "Please enter the VIN of the vehicle being sold: ", 0, Integer.MAX_VALUE);
 
+        Vehicle found = null;
+        for (Vehicle vehicle : dealership.getAllVehicles()) {
+            if (vehicle.getVin() == vin) {
+                found = vehicle;
+                break;
+            }
+        }
+        if (found == null) {
+            System.out.println("No vehicle found with that VIN.");
+            return;
+        }
+        String customerName = InputToolbox.promptString("Please enter the customer's name: ");
+        String customerEmail = InputToolbox.promptString("Please enter the customer's email: ");
+        String dateString = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String saleOrLease = InputToolbox.promptChoice("Sale or Lease?", "Sale", "Lease");
+        if (saleOrLease.equalsIgnoreCase("Sale")) {
+            boolean financeOption = InputToolbox.promptYesNo("Financed?");
+            newContract = new SalesContract(dateString, customerName, customerEmail, found, financeOption);
+        } else if (saleOrLease.equalsIgnoreCase("Lease")) {
+            int currentYear = now.getYear();
+            int carYear = found.getYear();
+            int carAge = currentYear - carYear;
+            if (carAge > 3) {
+                System.out.println("Sorry, vehicles older than 3 years old cannot be leased.");
+                return;
+            }
+            newContract = new LeaseContract(dateString, customerName, customerEmail, found);
+        }
+        ContractDataManager contractDataManager = new ContractDataManager();
+        contractDataManager.saveContract(newContract);
+        dealership.removeVehicle(found);
+        DealershipFileManager dealershipFileManager = new DealershipFileManager();
+        dealershipFileManager.saveDealership(dealership);
+        System.out.printf("Contract recorded for %s. Total: $%,.2f, Monthly: $%,.2f", customerName, newContract.getTotalPrice(), newContract.getMonthlyPayment());
     }
 
     public void processGetByColorRequest() {
